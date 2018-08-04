@@ -1,0 +1,6 @@
+[
+    { id: "bookinfo", text: "图书管理"},
+    { id: "bookManager", pid: "bookinfo", text: "图书管理界面", iconCls: "icon-add", url: "bookList.html" },    
+    { id: "borrowinfo", text: "借阅信息管理"}, 
+    { id: "borrowManager", pid: "borrowinfo", text: "借阅管理界面", iconCls: "icon-add", url: "borrowList.html" }   
+]

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<style type="text/css">
+td {
+	text-align: right;
+}
+</style>
+<script type="text/javascript" src="scripts/boot.js"></script>
+<body>
+<form id="edit" method="post">
+		<fieldset style="border: solid 1px #aaa; padding: 3px; width: 720px;">
+			<legend>基本信息</legend>
+			<div style="padding: 5px;">
+				<table>
+					<tr>
+						<td>图书编号</td>
+						<td><input class="mini-textbox" enabled="false" name="bookguid" id="bookguid" value="无需填写"/></td>
+						<td style="width: 85px;"></td>
+						<td>图书名称</td>
+						<td>
+						<input style="width: 50px;" class="mini-combobox" name="first" enabled="false" onvalidation="onbookvalidation"
+							id="first" url="room.json" valueField="id" required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请选择前缀</span>"
+							textField="text" />
+						<input class="mini-textbox" emptyText="请输入图书名称" enabled="false" onvalidation="onbookvalidation" name="bookname"
+						 id="bookname" required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请输入图书名称</span>" /></td>
+						<td style="width: 85px;" id="bookname_error" class="errorText"></td>
+					</tr>
+					<tr>
+						<td>图书类型</td>
+						<td><input class="mini-combobox" name="booktype" onvalidation="onbookvalidation"
+							id="booktype" url="selectType.json" valueField="id" required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请选择图书类型</span>"
+							textField="text" /></td>
+						<td id="booktype_error" class="errorText"></td>
+						<td>适合人群</td>
+						<td><input class="mini-combobox" name="suitable" id="suitable" onvalidation="onbookvalidation"
+							url="suitable.json" valueField="id" textField="text" 
+							required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请选择适合人群</span>"/></td>
+						<td id="suitable_error" class="errorText"></td>
+					</tr>
+					<tr>
+						
+						<td>入库日期</td>
+						<td><input class="mini-datepicker" ondrawdate="onDrawDate" name="buydate" id="buydate" nullValue="null" onvalidation="onbookvalidation"
+        format="yyyy-MM-dd HH:mm:ss" timeFormat="H:mm" showOkButton="true" showClearButton="false"
+        				required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请输入库时间</span>"/></td>
+						<td id="buydate_error" class="errorText"></td>
+						<td>借阅次数</td>
+						<td><input class="mini-spinner" enabled="false" value="0" minValue="0" maxValue="1000000" name="count" onvalidation="onbookvalidation"
+							id="count" required="true" errorMode="none" requiredErrorText="<span style='color:red;'>请输入使用次数</span>"/></td>
+						<td id="count_error" class="errorText"></td>
+					</tr>
+					<tr>
+						
+						<td>备注</td>
+						<td><input class="mini-textbox" name="remark" onvalidation="onbookvalidation"
+							id="remark" required="false" errorMode="none" requiredErrorText="<span style='color:red;'>请输入备注</span>"/></td>
+						<td id="remark_error" class="errorText"></td>
+					</tr>
+					<tr>
+						<td colspan="3"><input class="mini-button" text="修改"
+							onclick="edit"></td>
+						<td colspan="3" style="text-align: left; padding-left: 10px">
+							<input class="mini-button" onclick="onCancel()" text="取消">
+						</td>
+					</tr>
+				</table>
+			</div>
+
+		</fieldset>
+	</form>
+</body>
+<script type="text/javascript">
+
+	
+	mini.parse();
+	var form = new mini.Form("#edit");
+	function edit() {
+    var first = document.getElementById("first$value").value;
+		
+		if(first==""){
+			alert("请选择图书前缀!");
+			return false;
+		}
+		var first = document.getElementById("first$text").value;
+		var bookN = document.getElementById("bookname$text").value;
+		var bookname = mini.get("bookname");
+		var data = form.getData(true);
+		 bookname.setValue(first+"-"+bookN);
+		var json = mini.encode(data);
+		
+		
+		form.validate();
+		if(form.isValid()){
+			
+			$.ajax({
+				url : "bookedit?method=save",
+				type : 'post',
+				data : {
+					data : json
+				},
+				success : function(text) {
+					mini.alert(text,"提示信息",function(){
+						CloseWindow("ok");
+					});
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					mini.alert(jqXHR.responseText);
+				}
+			});
+		}
+	}
+	
+	function onDrawDate(e) {
+        var date = e.date;
+        var d = new Date();
+        if (date.getTime() > d.getTime()) {
+            e.allowSelect = false;
+        }
+    }
+	
+	function SetData(data) {
+            //跨页面传递的数据对象，克隆后才可以安全使用
+            data = mini.clone(data);
+            $.ajax({
+                url: "bookedit?method=queryById",
+                data: {"data":data.id},
+           		type: "post",
+                success: function (text) {
+                    var o = mini.decode(text);
+                    form.setData(o);
+                    form.setChanged(false);
+                }
+            });
+    }
+	function CloseWindow(action) {            
+        if (action == "close" && form.isChanged()) {
+            if (mini.confirm("数据被修改了，是否先保存？","提示",function(e){
+            	if(e=='ok')
+            		{
+            		edit();
+            		}
+            	else
+            		{
+            		window.CloseOwnerWindow(action);
+            		}
+            })) {
+                return false;
+            }
+        }
+        if (window.CloseOwnerWindow) return window.CloseOwnerWindow(action);
+        else window.close();            
+    }
+	
+	
+	function onbookvalidation(e){
+		updateError(e);
+	}
+	 function updateError(e) {
+         var id = e.sender.name + "_error";
+         var el = document.getElementById(id);
+         if (el) {
+             el.innerHTML = e.errorText;
+         }
+     }
+    
+    function onCancel(){
+     	CloseWindow("cancel");
+    }
+</script>
+</html>

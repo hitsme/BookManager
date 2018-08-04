@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<script type="text/javascript" src="scripts/boot.js"></script>
+<body>
+<div class="mini-toolbar">
+		<input class="mini-button" iconCls="icon-add" text="添加图书信息"
+			onclick="add()" /> <input text="删除选中" class="mini-button"
+			iconCls="icon-remove" onclick="del()" />
+		<div style="white-space:nowrap;float: right;">
+		<span>请选择图书类型</span>
+		<input class="mini-combobox" name="gettype" id="gettype"
+							 url="selectType.json" valueField="id"
+							textField="text" />
+		<span>请选择入库日期</span>
+                        <input class="mini-datepicker" name="gettime" id="gettime" nullValue="null" 
+        format="yyyy-MM-dd HH:mm:ss" timeFormat="H:mm"  showOkButton="true" showClearButton="true"
+        				/>   
+                        <a class="mini-button" onclick="search()">查询</a>
+                    </div>
+	</div>
+	
+	<div id="datagrid1" class="mini-datagrid" sortMode="client"
+		style="width: 100%; height: 250px;" url="booklist"
+		idField="id" allowResize="false" pageSize="5" multiSelect="true"
+		sizeList="[5,10,20,50]">
+		<div property="columns">
+			<div type="checkcolumn"></div>
+			<div type="indexcolumn">序号</div>
+			<div field="bookguid" width="0px" headerAlign="center"
+				allowSort="true">图书编号</div>
+			<div field="bookname" width="120" headerAlign="center"
+				>图书名称</div>
+			<div field="booktype" width="100" renderer="onbooktyperenderer"
+				align="center" headerAlign="center">图书类别</div>
+			<div field="suitable" width="100" renderer="onsuitablerenderer"
+				align="center" headerAlign="center">适合人群</div>
+			<div field="buydate" align="center" width="100" headerAlign="center" dateFormat="yyyy-MM-dd HH:mm"
+				 >入库时间</div>
+			<div field="count" width="120" headerAlign="center"
+				allowSort="true" dateFormat="yyyy-MM-dd">借阅次数</div>
+			
+			<textarea field="remark" width="100">备注</textarea>
+			<div name="action" width="80" headerAlign="center" align="center"
+				renderer="onActionRenderer" cellStyle="padding:0;">操作</div>
+		
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+
+	mini.parse();
+	var grid = mini.get("datagrid1");
+	grid.load();
+	var json = [
+
+	    {"id":"",
+	     "text":""},
+		{"id":"1",
+	    "text":"电子科技"},
+		{"id":"2",
+	    "text":"人文生活"},{
+	     "id":"3",
+	    "text":"时尚周刊"},{
+	     "id":"4",
+	    "text":"艺术鉴赏"}
+	    
+	];
+	function onbooktyperenderer(e){
+		for(var i =0;i<json.length;i++){
+			var j = json[i];
+			if(j.id==e.value){
+				return j.text;
+			}
+		}
+		
+	}
+	
+	var json2 = [{"id":"1",
+	   	 		"text":"老年人"},{
+	   	     "id":"2",
+	   	     "text":"青年人"}
+	   	     ,{
+	   	     "id":"3",
+	   	     "text":"儿童"}];
+	function onsuitablerenderer(e){
+		for(var i =0;i<json2.length;i++){
+			var j = json2[i];
+			if(j.id==e.value){
+				return j.text;
+			}
+		}
+	}
+	
+	function add(){
+		mini.open({
+		    url: "bookAdd.html",        //页面地址
+		    title: "新增图书信息",      //标题
+		    iconCls: "icon-add",    //标题图标
+		    width: "750px",      //宽度
+		    height: "500px",     //高
+		    allowResize: true,       //允许尺寸调节
+		    allowDrag: true,         //允许拖拽位置
+		    showCloseButton: true,   //显示关闭按钮
+		    //showMaxButton: Boolean,     //显示最大化按钮
+		    showModal: true,         //显示遮罩
+		  //  loadOnRefresh: false,       //true每次刷新都激发onload事件
+		    onload: function () {       //弹出页面加载完成
+		       // var iframe = this.getIFrameEl(); 
+		       // var data = {};       
+		        //调用弹出页面方法进行初始化
+		        //iframe.contentWindow.SetData(data); 
+		                        
+		    },
+		    ondestroy: function (action) {  //弹出页面关闭前
+		    	grid.load();
+		        /* if (action == "ok") {       //如果点击“确定”
+		            var iframe = this.getIFrameEl();
+		            //获取选中、编辑的结果
+		            var data = iframe.contentWindow.GetData();
+		            data = mini.clone(data);    //必须。克隆数据。
+		            ......
+		         }    */                    
+		    }
+	
+		});
+	}
+	
+	function del(){
+		var ids = grid.getSelecteds();
+		if (ids.length > 0) {
+	       mini.confirm("确定删除选中记录？","",function(action){
+	        	if(action=="ok"){
+	        		var id=[];
+	        		for(var i =0;i<ids.length;i++){
+	        			id.push(ids[i].bookguid);
+	        		}
+	        		var i=id.join(",");
+	        		$.ajax({
+	        			url : "bookdelete",
+	        			type : 'post',
+	        			data : {
+	        				data : i
+	        			},
+	        			success : function(text) {
+	        				mini.alert(text,"提示信息",function(){
+	        					grid.load();
+	        				});
+	        			},
+	        			error : function(jqXHR, textStatus, errorThrown) {
+	        				mini.alert(jqXHR.responseText);
+	        			}
+	        		});
+	        	}
+	        }); 
+	}
+	}
+	
+	function onActionRenderer(e){
+		var grid = e.sender;
+		var record = e.record;
+		var uid = record._uid;
+		var rowIndex = e.rowIndex;
+	
+		var s = '<a class="Edit_Button" href="javascript:editRow(\'' + uid
+				+ '\')">编辑</a>'+'&nbsp;&nbsp;'
+				+ '<a class="Delete_Button" href="javascript:delRow(\'' + uid
+				+ '\')">删除</a>';
+		return s;
+		
+	}
+	
+	function onCountRenderer(e){
+		var s="";
+		if(e.value>10){
+			s = '<span style="color:red;">'+e.value+'</span>';
+		}
+		else{
+			s = '<span style="color:#228B22;">'+e.value+'</span>';
+		}
+		return s;
+	}
+	
+	function delRow(uid){
+		var row = grid.getRowByUID(uid);
+	    if (row) {
+	        if (confirm("确定删除此记录？")) {
+	            grid.loading("删除中，请稍后......");
+	            $.ajax({
+	            	url : "bookdelete",
+	    			type : 'post',
+	    			data : {
+	    				data : row.bookguid
+	    			},
+	                success: function (text) {
+	                    grid.reload();
+	                },
+	                error : function(jqXHR, textStatus, errorThrown) {
+	    				mini.alert(jqXHR.responseText);
+	    			}
+	            });
+	        }
+	    }
+	}
+	
+	function editRow(id){
+		var row = grid.getRowByUID(id);
+		var rowid = row.bookguid;
+		mini.open({
+	        url: "bookEdit.html",
+	        title: "编辑图书信息", width: 780, height: 460,
+	        onload: function () {
+	            var iframe = this.getIFrameEl();
+	            var data = { action: "EditRow", id: rowid };
+	            iframe.contentWindow.SetData(data);
+	        },
+	        ondestroy: function (action) {
+	            grid.reload();
+	        }
+	    });
+	}
+	
+	function search() {
+	    var name1 = mini.get("gettype").getValue();
+	    //var type = mimi.get("gettype").getValue();
+	    var time1 = document.getElementById("gettime$value").value;
+	    //var i = name+","+type;
+	    var i = {type:name1,time:time1};
+	    grid.load(i);
+	}
+	 function onKeyEnter(e) {
+	     search();
+	 }
+
+</script>
+</html>
